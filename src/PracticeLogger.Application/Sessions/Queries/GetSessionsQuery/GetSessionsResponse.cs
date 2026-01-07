@@ -1,4 +1,4 @@
-namespace Sessions.Queries.GetSessionsQuery;
+namespace PracticeLogger.Application.Sessions.Queries.GetSessionsQuery;
 
 public record GetSessionsResponse(IEnumerable<Session> Sessions);
 

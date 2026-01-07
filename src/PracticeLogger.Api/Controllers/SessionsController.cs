@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Sessions.Queries.GetSessionsQuery;
+using PracticeLogger.Application.Sessions.Queries.GetSessionsQuery;
 
-namespace Controllers;
+namespace PracticeLogger.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -10,13 +10,13 @@ public class SessionsController(IMediator mediator) : ControllerBase
 {
     private readonly IMediator _mediator = mediator;
 
-    [HttpPost("Sessions")]
+    [HttpPost]
     public Task<ActionResult> CreateSession()
     {
         return null;
     }
 
-    [HttpGet("Sessions")]
+    [HttpGet]
     public async Task<ActionResult<GetSessionsResponse>> GetSessions(
         DateOnly? startDate,
         DateOnly? endDate,
