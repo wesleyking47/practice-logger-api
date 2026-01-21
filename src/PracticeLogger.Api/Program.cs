@@ -11,12 +11,16 @@ builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi();
 
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddInfrastructure(builder.Configuration);
+}
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var initialiser = scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
     await initialiser.InitialiseAsync();
     await initialiser.SeedAsync();
@@ -41,3 +45,5 @@ app.MapHealthChecks("/healthz");
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

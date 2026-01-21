@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.101
+          cache: true
+
+      - name: Restore
+        run: dotnet restore PracticeLogger.sln
+
+      - name: Build
+        run: dotnet build PracticeLogger.sln --configuration Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test tests/PracticeLogger.Tests.Unit/PracticeLogger.Tests.Unit.csproj --configuration Release --no-build
+
+      - name: Integration tests
+        run: dotnet test tests/PracticeLogger.Tests.Integration/PracticeLogger.Tests.Integration.csproj --configuration Release --no-build
