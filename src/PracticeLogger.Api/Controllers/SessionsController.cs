@@ -40,4 +40,16 @@ public class SessionsController(IMediator mediator) : ControllerBase
         await _mediator.Send(command);
         return Ok();
     }
+    [HttpPut("{id}")]
+    public async Task<ActionResult> UpdateSession(int id, [FromBody] UpdateSessionCommand command)
+    {
+        if (id != command.Id)
+        {
+            return BadRequest();
+        }
+
+        await _mediator.Send(command);
+
+        return NoContent();
+    }
 }
