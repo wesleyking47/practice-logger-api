@@ -32,4 +32,12 @@ public class SessionsController(IMediator mediator) : ControllerBase
         var response = await _mediator.Send(query);
         return response;
     }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteSession(int id)
+    {
+        var command = new DeleteSessionCommand(id);
+        await _mediator.Send(command);
+        return Ok();
+    }
 }
