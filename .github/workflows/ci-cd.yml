@@ -83,7 +83,7 @@ jobs:
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --query "Environment.Variables" \
             --output json > env.json
-          jq -c '{Variables: . + {RUN_MIGRATIONS:"true"}}' env.json > env-updated.json
+          jq -c '{Variables: (. + {RUN_MIGRATIONS:"true"})}' env.json > env-updated.json
           aws lambda update-function-configuration \
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --cli-input-json file://env-updated.json
@@ -110,7 +110,7 @@ jobs:
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --query "Environment.Variables" \
             --output json > env.json
-          jq -c '{Variables: . + {RUN_MIGRATIONS:"false"}}' env.json > env-updated.json
+          jq -c '{Variables: (. + {RUN_MIGRATIONS:"false"})}' env.json > env-updated.json
           aws lambda update-function-configuration \
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --cli-input-json file://env-updated.json
