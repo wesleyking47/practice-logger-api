@@ -83,9 +83,9 @@ jobs:
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --query "Environment.Variables" \
             --output json > env.json
-          jq -c '{Variables: (. + {RUN_MIGRATIONS:"true"})}' env.json > env-updated.json
+          jq -c '{FunctionName: $fn, Environment: {Variables: (. + {RUN_MIGRATIONS:"true"})}}' \
+            --arg fn "${{ steps.api_outputs.outputs.function_name }}" env.json > env-updated.json
           aws lambda update-function-configuration \
-            --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --cli-input-json file://env-updated.json
           aws lambda wait function-updated \
             --function-name "${{ steps.api_outputs.outputs.function_name }}"
@@ -110,9 +110,9 @@ jobs:
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --query "Environment.Variables" \
             --output json > env.json
-          jq -c '{Variables: (. + {RUN_MIGRATIONS:"false"})}' env.json > env-updated.json
+          jq -c '{FunctionName: $fn, Environment: {Variables: (. + {RUN_MIGRATIONS:"false"})}}' \
+            --arg fn "${{ steps.api_outputs.outputs.function_name }}" env.json > env-updated.json
           aws lambda update-function-configuration \
-            --function-name "${{ steps.api_outputs.outputs.function_name }}" \
             --cli-input-json file://env-updated.json
 
   deploy:
