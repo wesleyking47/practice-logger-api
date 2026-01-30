@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
+
 builder.Services.AddHealthChecks();
 
 builder.Services.AddOpenApi();

@@ -1,0 +1,64 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.101
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_API_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Publish Lambda package
+        run: dotnet publish src/PracticeLogger.Api/PracticeLogger.Api.csproj -c Release -o publish
+
+      - name: Create zip artifact
+        run: |
+          cd publish
+          zip -r ../api.zip .
+
+      - name: Resolve API function name
+        id: api_function
+        run: |
+          API_FUNCTION_NAME=$(aws cloudformation describe-stacks \
+            --stack-name ApiStack \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiFunctionName'].OutputValue | [0]" \
+            --output text)
+          if [ -z "$API_FUNCTION_NAME" ] || [ "$API_FUNCTION_NAME" = "None" ]; then
+            echo "ApiFunctionName output not found for stack ApiStack" >&2
+            exit 1
+          fi
+          echo "name=$API_FUNCTION_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Update Lambda code
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ steps.api_function.outputs.name }}" \
+            --zip-file "fileb://api.zip"
+
+      - name: Wait for Lambda update
+        run: |
+          aws lambda wait function-updated \
+            --function-name "${{ steps.api_function.outputs.name }}"
