@@ -81,9 +81,10 @@ jobs:
           set -euo pipefail
           aws lambda get-function-configuration \
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
-            --query "Environment.Variables" \
-            --output json > env.json
-          jq -c '{FunctionName: $fn, Environment: {Variables: (. + {RUN_MIGRATIONS:"true"})}}' \
+            --output json > function-config.json
+          jq -r '.Timeout' function-config.json > timeout.txt
+          jq '.Environment.Variables' function-config.json > env.json
+          jq -c '{FunctionName: $fn, Timeout: 30, Environment: {Variables: (. + {RUN_MIGRATIONS:"true"})}}' \
             --arg fn "${{ steps.api_outputs.outputs.function_name }}" env.json > env-updated.json
           aws lambda update-function-configuration \
             --cli-input-json file://env-updated.json
@@ -106,12 +107,17 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          DEFAULT_TIMEOUT=$(cat timeout.txt)
+          if [ -z "$DEFAULT_TIMEOUT" ]; then
+            DEFAULT_TIMEOUT=3
+          fi
           aws lambda get-function-configuration \
             --function-name "${{ steps.api_outputs.outputs.function_name }}" \
-            --query "Environment.Variables" \
-            --output json > env.json
-          jq -c '{FunctionName: $fn, Environment: {Variables: (. + {RUN_MIGRATIONS:"false"})}}' \
-            --arg fn "${{ steps.api_outputs.outputs.function_name }}" env.json > env-updated.json
+            --output json > function-config.json
+          jq '.Environment.Variables' function-config.json > env.json
+          jq -c '{FunctionName: $fn, Timeout: $timeout, Environment: {Variables: (. + {RUN_MIGRATIONS:"false"})}}' \
+            --arg fn "${{ steps.api_outputs.outputs.function_name }}" \
+            --argjson timeout "$DEFAULT_TIMEOUT" env.json > env-updated.json
           aws lambda update-function-configuration \
             --cli-input-json file://env-updated.json
 
