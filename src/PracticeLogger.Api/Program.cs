@@ -20,7 +20,8 @@ if (!builder.Environment.IsEnvironment("Testing"))
 
 var app = builder.Build();
 
-if (!app.Environment.IsEnvironment("Testing"))
+if (!app.Environment.IsEnvironment("Testing")
+    && builder.Configuration.GetValue<bool>("RUN_MIGRATIONS"))
 {
     using var scope = app.Services.CreateScope();
     var initialiser = scope.ServiceProvider.GetRequiredService<ApplicationDbContextInitialiser>();
