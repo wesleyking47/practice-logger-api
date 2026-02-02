@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using PracticeLogger.Application.Sessions.Commands;
@@ -7,19 +8,32 @@ using PracticeLogger.Tests.Integration.Infrastructure;
 
 namespace PracticeLogger.Tests.Integration.Sessions;
 
-public class SessionsApiTests : IClassFixture<TestWebApplicationFactory>
+public class SessionsApiTests : IClassFixture<TestWebApplicationFactory>, IAsyncLifetime
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
+    private const string TestPassword = "TestPass123!";
+
     private readonly HttpClient _client;
+    private string _username = string.Empty;
 
     public SessionsApiTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
+
+    public async ValueTask InitializeAsync()
+    {
+        _username = $"test_user_{Guid.NewGuid():N}";
+        await RegisterUserAsync(_username, TestPassword);
+        var token = await LoginAsync(_username, TestPassword);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
     [Fact]
     public async Task CreateSession_ReturnsCreatedAndPersists()
@@ -142,4 +156,37 @@ public class SessionsApiTests : IClassFixture<TestWebApplicationFactory>
         );
         return response ?? new GetSessionsResponse([]);
     }
+
+    private async Task RegisterUserAsync(string username, string password)
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/auth/register",
+            new { Username = username, Password = password },
+            TestContext.Current.CancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task<string> LoginAsync(string username, string password)
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new { Username = username, Password = password },
+            TestContext.Current.CancellationToken
+        );
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<LoginResponse>(
+            JsonOptions,
+            TestContext.Current.CancellationToken
+        );
+
+        if (payload is null || string.IsNullOrWhiteSpace(payload.Token))
+        {
+            throw new InvalidOperationException("Login response did not include a token.");
+        }
+
+        return payload.Token;
+    }
+
+    private sealed record LoginResponse(string Token);
 }
