@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         : base(options) { }
 
     public DbSet<Session> PracticeSessions { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

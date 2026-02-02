@@ -4,10 +4,11 @@ using PracticeLogger.Application.Common.Interfaces;
 
 namespace PracticeLogger.Application.Sessions.Queries.GetSessionsQuery;
 
-public class GetSessionsQueryHandler(IApplicationDbContext applicationDbContext)
+public class GetSessionsQueryHandler(IApplicationDbContext applicationDbContext, ICurrentUserService currentUserService)
     : IRequestHandler<GetSessionsQuery, GetSessionsResponse>
 {
     private readonly IApplicationDbContext _applicationDbContext = applicationDbContext;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task<GetSessionsResponse> Handle(
         GetSessionsQuery query,
@@ -16,6 +17,7 @@ public class GetSessionsQueryHandler(IApplicationDbContext applicationDbContext)
     {
         var sessions = await _applicationDbContext
             .PracticeSessions.AsNoTracking()
+            .Where(session => session.UserId == _currentUserService.UserId)
             .Where(session =>
                 (query.StartDate == null || session.Date >= query.StartDate)
                 && (query.EndDate == null || session.Date <= query.EndDate)

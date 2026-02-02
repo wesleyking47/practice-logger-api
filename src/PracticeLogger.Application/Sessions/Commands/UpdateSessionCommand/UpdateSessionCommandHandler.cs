@@ -5,22 +5,21 @@ using PracticeLogger.Domain.Models;
 
 namespace PracticeLogger.Application.Sessions.Commands;
 
-public class UpdateSessionCommandHandler(IApplicationDbContext context)
+public class UpdateSessionCommandHandler(IApplicationDbContext context, ICurrentUserService currentUserService)
     : IRequestHandler<UpdateSessionCommand>
 {
     private readonly IApplicationDbContext _context = context;
+    private readonly ICurrentUserService _currentUserService = currentUserService;
 
     public async Task Handle(UpdateSessionCommand request, CancellationToken cancellationToken)
     {
-        // Check if exists
-        var exists = await _context.PracticeSessions
+        // Check if exists and owned by user
+        var existingSession = await _context.PracticeSessions
             .AsNoTracking()
-            .AnyAsync(s => s.Id == request.Id, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == request.Id && s.UserId == _currentUserService.UserId, cancellationToken);
 
-        if (!exists)
+        if (existingSession == null)
         {
-            // Similar to before, return if not found. 
-            // Ideally should throw NotFoundException.
             return;
         }
 
@@ -30,7 +29,10 @@ public class UpdateSessionCommandHandler(IApplicationDbContext context)
             request.Activity,
             request.Minutes,
             request.Notes
-        );
+        )
+        {
+            UserId = existingSession.UserId // Preserve/Ensure UserId
+        };
 
         _context.PracticeSessions.Update(updatedSession);
 

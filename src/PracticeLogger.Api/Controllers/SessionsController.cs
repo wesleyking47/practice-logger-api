@@ -7,16 +7,17 @@ namespace PracticeLogger.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class SessionsController(IMediator mediator) : ControllerBase
+[Microsoft.AspNetCore.Authorization.Authorize]
+public class SessionsController(ISender sender) : ControllerBase
 {
-    private readonly IMediator _mediator = mediator;
+    private readonly ISender _sender = sender;
 
     [HttpPost]
     public async Task<ActionResult<int>> CreateSession(
         [FromBody] CreateSessionCommand createSessionCommand
     )
     {
-        var response = await _mediator.Send(createSessionCommand);
+        var response = await _sender.Send(createSessionCommand);
 
         return Created($"/api/sessions/{response}", response);
     }
@@ -29,7 +30,7 @@ public class SessionsController(IMediator mediator) : ControllerBase
     )
     {
         var query = new GetSessionsQuery(startDate, endDate, activity);
-        var response = await _mediator.Send(query);
+        var response = await _sender.Send(query);
         return response;
     }
 
@@ -37,7 +38,7 @@ public class SessionsController(IMediator mediator) : ControllerBase
     public async Task<ActionResult> DeleteSession(int id)
     {
         var command = new DeleteSessionCommand(id);
-        await _mediator.Send(command);
+        await _sender.Send(command);
         return Ok();
     }
     [HttpPut("{id}")]
@@ -48,7 +49,7 @@ public class SessionsController(IMediator mediator) : ControllerBase
             return BadRequest();
         }
 
-        await _mediator.Send(command);
+        await _sender.Send(command);
 
         return NoContent();
     }
