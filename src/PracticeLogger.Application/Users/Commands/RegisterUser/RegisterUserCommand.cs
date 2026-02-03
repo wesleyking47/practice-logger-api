@@ -17,7 +17,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, i
 
     public async Task<int> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, workFactor: 10);
 
         var user = new User
         {
