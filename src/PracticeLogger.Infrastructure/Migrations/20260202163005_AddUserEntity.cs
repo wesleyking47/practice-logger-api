@@ -11,13 +11,6 @@ namespace PracticeLogger.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "UserId",
-                table: "practice_sessions",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
@@ -31,6 +24,31 @@ namespace PracticeLogger.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
                 });
+
+            migrationBuilder.Sql(
+                "INSERT INTO \"Users\" (\"Id\", \"Username\", \"PasswordHash\") VALUES (1, 'legacy', '') " +
+                "ON CONFLICT (\"Id\") DO NOTHING;");
+            migrationBuilder.Sql(
+                "SELECT setval(pg_get_serial_sequence('\"Users\"', 'Id'), " +
+                "(SELECT MAX(\"Id\") FROM \"Users\"));");
+
+            migrationBuilder.AddColumn<int>(
+                name: "UserId",
+                table: "practice_sessions",
+                type: "integer",
+                nullable: true);
+
+            migrationBuilder.Sql(
+                "UPDATE practice_sessions SET \"UserId\" = 1 WHERE \"UserId\" IS NULL;");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "UserId",
+                table: "practice_sessions",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer",
+                oldNullable: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_practice_sessions_UserId",
